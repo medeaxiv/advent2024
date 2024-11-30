@@ -1,0 +1,10 @@
+/target
+/.cargo
+
+# Don't commit problem inputs...
+input.txt
+example*.txt
+
+# ...but allow template inputs
+!/src/template/input.txt
+!/src/template/example.1.txt
