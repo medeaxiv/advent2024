@@ -9,7 +9,9 @@ fn problems<H>(harness: H) -> ProblemCollection
 where
     H: Harness,
 {
-    ProblemCollection::builder(harness).build()
+    ProblemCollection::builder(harness)
+        .add_problem(1, advent_2024::day01::problem)
+        .build()
 }
 
 fn main() -> anyhow::Result<()> {
