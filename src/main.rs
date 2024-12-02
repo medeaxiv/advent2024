@@ -11,6 +11,7 @@ where
 {
     ProblemCollection::builder(harness)
         .add_problem(1, advent_2024::day01::problem)
+        .add_problem(2, advent_2024::day02::problem)
         .build()
 }
 
