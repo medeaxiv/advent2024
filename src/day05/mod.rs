@@ -24,16 +24,6 @@ fn part_1(input: &str) -> anyhow::Result<i64> {
     Ok(total)
 }
 
-fn is_valid_update(rules: &Rules, update: &[i64]) -> bool {
-    for (&first, &second) in update.iter().tuple_combinations() {
-        if !rules.is_valid_order(first, second) {
-            return false;
-        }
-    }
-
-    true
-}
-
 fn part_2(input: &str) -> anyhow::Result<i64> {
     let (rules, updates) = parse(input)?;
 
@@ -49,6 +39,13 @@ fn part_2(input: &str) -> anyhow::Result<i64> {
     }
 
     Ok(total)
+}
+
+fn is_valid_update(rules: &Rules, update: &[i64]) -> bool {
+    update
+        .iter()
+        .tuple_combinations()
+        .all(|(&first, &second)| rules.is_valid_order(first, second))
 }
 
 fn fix_update(rules: &Rules, update: &mut [i64]) {
