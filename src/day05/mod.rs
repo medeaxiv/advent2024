@@ -1,8 +1,4 @@
-use aoc_utils::{
-    hashbrown::{HashMap, HashSet},
-    str::StrExt,
-    AocError,
-};
+use aoc_utils::{hashbrown::HashSet, str::StrExt, AocError};
 use itertools::Itertools;
 
 const INPUT: &str = include_str!("input.txt");
@@ -56,13 +52,13 @@ fn part_2(input: &str) -> anyhow::Result<i64> {
 }
 
 fn fix_update(rules: &Rules, update: &mut [i64]) {
-    for (i, j) in (0..update.len()).tuple_combinations() {
-        let first = update[i];
-        let second = update[j];
-        if !rules.is_valid_order(first, second) {
-            update.swap(i, j);
+    update.sort_by(|&first, &second| {
+        if rules.is_valid_order(first, second) {
+            std::cmp::Ordering::Less
+        } else {
+            std::cmp::Ordering::Greater
         }
-    }
+    });
 }
 
 fn parse(input: &str) -> anyhow::Result<(Rules, Vec<Update>)> {
@@ -91,27 +87,22 @@ fn parse(input: &str) -> anyhow::Result<(Rules, Vec<Update>)> {
 }
 
 struct Rules {
-    rules: HashMap<i64, HashSet<i64>>,
+    rules: HashSet<(i64, i64)>,
 }
 
 impl Rules {
     pub fn new() -> Self {
         Self {
-            rules: HashMap::new(),
+            rules: HashSet::new(),
         }
     }
 
     pub fn is_valid_order(&self, first: i64, second: i64) -> bool {
-        if let Some(forbidden) = self.rules.get(&first) {
-            !forbidden.contains(&second)
-        } else {
-            true
-        }
+        !self.rules.contains(&(second, first))
     }
 
     pub fn insert(&mut self, first: i64, second: i64) {
-        let entry = self.rules.entry(second).or_default();
-        entry.insert(first);
+        self.rules.insert((first, second));
     }
 }
 
