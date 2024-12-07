@@ -27,22 +27,18 @@ fn can_be_represented(equation: &Equation) -> bool {
     fn recurse(equation: &Equation, current: u64, count: usize) -> bool {
         if current > equation.value() {
             return false;
-        } else if current == equation.value() && count == equation.len() {
-            return true;
-        }
-
-        if let Some(next) = equation.operand(count) {
+        } else if let Some(next) = equation.operand(count) {
             recurse(equation, current + next, count + 1)
                 || recurse(equation, current * next, count + 1)
         } else {
-            false
+            current == equation.value()
         }
     }
 
     if let Some(first) = equation.operand(0) {
         recurse(equation, first, 1)
     } else {
-        equation.value == 0
+        equation.value() == 0
     }
 }
 
@@ -72,23 +68,19 @@ fn can_be_represented_with_concatenation(equation: &Equation) -> bool {
     fn recurse(equation: &Equation, current: u64, count: usize) -> bool {
         if current > equation.value() {
             return false;
-        } else if current == equation.value() && count == equation.len() {
-            return true;
-        }
-
-        if let Some(next) = equation.operand(count) {
+        } else if let Some(next) = equation.operand(count) {
             recurse(equation, current + next, count + 1)
                 || recurse(equation, current * next, count + 1)
                 || recurse(equation, concatenate(current, next), count + 1)
         } else {
-            false
+            current == equation.value()
         }
     }
 
     if let Some(first) = equation.operand(0) {
         recurse(equation, first, 1)
     } else {
-        equation.value == 0
+        equation.value() == 0
     }
 }
 
@@ -116,10 +108,6 @@ struct Equation {
 }
 
 impl Equation {
-    pub fn len(&self) -> usize {
-        self.operands.len()
-    }
-
     pub fn value(&self) -> u64 {
         self.value
     }
