@@ -59,14 +59,14 @@ fn part_2(input: &str) -> anyhow::Result<u64> {
 }
 
 fn can_be_represented_with_concatenation(equation: &Equation) -> bool {
-    fn concatenate(first: u64, second: u64) -> u64 {
-        let mut shift = (0, second);
-        while shift.1 > 0 {
-            shift.0 += 1;
-            shift.1 /= 10;
+    fn concatenate(mut first: u64, second: u64) -> u64 {
+        let mut shift = second;
+        while shift > 0 {
+            shift /= 10;
+            first *= 10;
         }
 
-        first * 10u64.pow(shift.0) + second
+        first + second
     }
 
     fn recurse(equation: &Equation, current: u64, count: usize) -> bool {
