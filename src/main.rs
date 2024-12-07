@@ -59,8 +59,8 @@ fn run_problem(problem_num: i32, problem: &Problem) {
 }
 
 fn run_single(problem_num: i32, part_idx: usize, runner: &dyn Runner) {
-    print!("Problem {}-{}: ", problem_num, part_idx + 1);
     let result = runner.run();
+    print!("Problem {}-{}: ", problem_num, part_idx + 1);
     match result {
         Ok(out) => println!("{out}"),
         Err(e) => println!("{e}"),
