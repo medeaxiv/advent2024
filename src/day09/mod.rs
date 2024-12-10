@@ -65,23 +65,34 @@ fn part_2(input: &str) -> anyhow::Result<u64> {
 fn defragment(disk: &mut Disk) {
     let mut file_index = disk.files.len().checked_sub(1).unwrap_or(0);
     while file_index > 0 {
-        let file = disk.files[file_index];
-
-        if let Some(free_span) = disk
-            .free_spans
-            .iter_mut()
-            .find(|span| span.len() >= file.len())
-        {
-            if free_span.start() < file.start() {
-                for index in file.start()..file.end() {
-                    disk.blocks.swap(free_span.start as usize, index as usize);
-                    free_span.start += 1;
-                }
-            }
-        }
-
+        defragment_file(disk, file_index);
         file_index -= 1;
     }
+}
+
+fn defragment_file(disk: &mut Disk, file_index: usize) -> Option<()> {
+    let file = *disk.files.get(file_index)?;
+
+    let free_span_index = disk
+        .free_spans
+        .iter()
+        .position(|span| span.len() >= file.len())?;
+
+    let free_span = disk.free_spans.get_mut(free_span_index)?;
+    if free_span.start() >= file.start() {
+        return None;
+    }
+
+    for index in file.start()..file.end() {
+        disk.blocks.swap(free_span.start as usize, index as usize);
+        free_span.start += 1;
+    }
+
+    if free_span.is_empty() {
+        disk.free_spans.remove(free_span_index);
+    }
+
+    Some(())
 }
 
 fn parse(input: &str) -> anyhow::Result<Disk> {
@@ -201,6 +212,10 @@ impl Span {
 
     pub const fn len(&self) -> u64 {
         self.end - self.start
+    }
+
+    pub const fn is_empty(&self) -> bool {
+        self.start >= self.end
     }
 
     pub const fn start(&self) -> u64 {
