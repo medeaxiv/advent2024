@@ -1,8 +1,8 @@
 use allocator_api2::vec::Vec;
 use aoc_utils::{
     grid::{Coordinates, Grid},
+    hashbrown::HashSet,
     neighbors::CardinalNeighbors,
-    search::breadth_first_search,
     AocError,
 };
 
@@ -30,22 +30,30 @@ fn part_1(input: &str) -> anyhow::Result<u64> {
 fn trail_scores(map: &Map) -> Grid<u64> {
     let mut scores = Grid::new(map.grid.width(), map.grid.height());
 
-    for trailpeak in map.trailpeaks.iter() {
-        let _: Option<()> = breadth_first_search(
-            trailpeak,
-            |&coordinates| {
-                let height = map.grid[coordinates];
-                CardinalNeighbors::new(coordinates).filter(move |neighbor| {
-                    map.grid
-                        .get(*neighbor)
-                        .is_some_and(|neighbor_height| *neighbor_height + 1 == height)
-                })
-            },
-            |coordinates| {
-                scores[*coordinates] += 1;
-                None
-            },
-        );
+    let mut stack = Vec::new();
+    let mut visited = HashSet::new();
+    for &trailpeak in map.trailpeaks.iter() {
+        stack.push(trailpeak);
+
+        while let Some(node) = stack.pop() {
+            if !visited.insert(node) {
+                continue;
+            }
+
+            let height = map.grid[node];
+
+            scores[node] += 1;
+
+            let neighbors = CardinalNeighbors::new(node).filter(move |neighbor| {
+                map.grid
+                    .get(*neighbor)
+                    .is_some_and(|neighbor_height| *neighbor_height + 1 == height)
+            });
+
+            stack.extend(neighbors);
+        }
+
+        visited.clear();
     }
 
     scores
