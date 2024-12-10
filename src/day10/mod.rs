@@ -18,7 +18,7 @@ where
 
 fn part_1(input: &str) -> anyhow::Result<u64> {
     let map = parse(input)?;
-    let scores = trail_scores_by_peaks(&map);
+    let scores = trail_scores(&map);
     let total_score = map
         .trailheads
         .iter()
@@ -27,7 +27,7 @@ fn part_1(input: &str) -> anyhow::Result<u64> {
     Ok(total_score)
 }
 
-fn trail_scores_by_peaks(map: &Map) -> Grid<u64> {
+fn trail_scores(map: &Map) -> Grid<u64> {
     let mut scores = Grid::new(map.grid.width(), map.grid.height());
 
     for trailpeak in map.trailpeaks.iter() {
@@ -53,26 +53,26 @@ fn trail_scores_by_peaks(map: &Map) -> Grid<u64> {
 
 fn part_2(input: &str) -> anyhow::Result<u64> {
     let map = parse(input)?;
-    let scores = trail_scores_by_paths(&map);
-    let total_score = map
+    let ratings = trail_ratings(&map);
+    let total_rating = map
         .trailheads
         .iter()
-        .map(|&coordinates| scores[coordinates])
+        .map(|&coordinates| ratings[coordinates])
         .sum::<u64>();
-    Ok(total_score)
+    Ok(total_rating)
 }
 
-fn trail_scores_by_paths(map: &Map) -> Grid<u64> {
-    fn recurse(coordinates: Coordinates, map: &Map, scores: &mut Grid<u64>) -> u64 {
-        let cached_score = scores[coordinates];
-        if cached_score != 0 {
-            return cached_score;
+fn trail_ratings(map: &Map) -> Grid<u64> {
+    fn recurse(coordinates: Coordinates, map: &Map, ratings: &mut Grid<u64>) -> u64 {
+        let cached_rating = ratings[coordinates];
+        if cached_rating != 0 {
+            return cached_rating;
         }
 
         let height = map.grid[coordinates];
         let next_height = height + 1;
 
-        let mut score = 0;
+        let mut rating = 0;
         for neighbor in CardinalNeighbors::new(coordinates) {
             let Some(&neighbor_height) = map.grid.get(neighbor) else {
                 continue;
@@ -82,24 +82,24 @@ fn trail_scores_by_paths(map: &Map) -> Grid<u64> {
                 continue;
             }
 
-            score += recurse(neighbor, map, scores);
+            rating += recurse(neighbor, map, ratings);
         }
 
-        scores[coordinates] = score;
-        score
+        ratings[coordinates] = rating;
+        rating
     }
 
-    let mut scores = Grid::new(map.grid.width(), map.grid.height());
+    let mut ratings = Grid::new(map.grid.width(), map.grid.height());
 
     for &trailpeak in map.trailpeaks.iter() {
-        scores[trailpeak] = 1;
+        ratings[trailpeak] = 1;
     }
 
     for &trailhead in map.trailheads.iter() {
-        recurse(trailhead, map, &mut scores);
+        recurse(trailhead, map, &mut ratings);
     }
 
-    scores
+    ratings
 }
 
 fn parse(input: &str) -> anyhow::Result<Map> {
