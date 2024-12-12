@@ -72,10 +72,8 @@ struct Map {
 
 impl Map {
     pub fn compute_regions(&mut self) {
-        let mut stack = Vec::new();
-        let mut visited = HashSet::new();
         for i in 0..self.grid.len() {
-            self.compute_region(i, &mut stack, &mut visited);
+            self.compute_region(i);
         }
 
         for y in 0..=self.grid.height() {
@@ -83,12 +81,7 @@ impl Map {
         }
     }
 
-    fn compute_region(
-        &mut self,
-        index: usize,
-        stack: &mut Vec<Coordinates>,
-        visited: &mut HashSet<Coordinates>,
-    ) {
+    fn compute_region(&mut self, index: usize) {
         let Some(origin) = self.grid.get_at_index(index).copied() else {
             return;
         };
@@ -104,6 +97,8 @@ impl Map {
         let region_index = self.regions.len();
         let mut region = Region::default();
 
+        let mut stack = Vec::new();
+        let mut visited = HashSet::new();
         stack.push(coordinates);
         while let Some(coordinates) = stack.pop() {
             if !visited.insert(coordinates) {
