@@ -1,8 +1,6 @@
 use aoc_utils::{
-    grid::{bitmap::BrailleBitmap, Grid},
-    hashbrown::HashSet,
+    grid::{bitmap::BrailleBitmap, Coordinates, Grid},
     nalgebra,
-    neighbors::CardinalNeighbors,
     nom::{
         self,
         bytes::complete::tag,
@@ -67,81 +65,48 @@ fn part_2(input: &str, width: u64, height: u64) -> anyhow::Result<i64> {
 
     let mut robots = parse(input)?;
 
-    let mut detect_tree_context = DetectTreeContext::default();
+    let mut max_density = (0, 0);
     for second in 1..=LIMIT {
         step(&mut robots, width, height);
-        if detect_tree(&robots, &mut detect_tree_context) {
-            return Ok(second);
+        let density = density_peak(&robots, width, height);
+
+        if density > max_density.0 {
+            tracing::trace!(second, density, "New peak density found");
+            max_density = (density, second);
         }
     }
 
-    let message = format!("Unable to find tree in {LIMIT} seconds");
-    Err(AocError::message(message).into())
+    Ok(max_density.1)
 }
 
-#[derive(Default)]
-#[allow(unused)]
-struct DetectTreeContext {
-    map: HashSet<Vec2>,
-    stack: Vec<(Vec2, i64)>,
-    visited: HashSet<Vec2>,
-}
+fn density_peak(robots: &[Robot], width: u64, height: u64) -> i64 {
+    const BUCKET_COUNT: usize = 10;
 
-fn detect_tree(robots: &[Robot], ctx: &mut DetectTreeContext) -> bool {
-    // Adjust the threshold for your input
-    const CLUSTER_SIZE_THRESHOLD: i64 = 15;
+    let mut density = 0;
+    let size = Vec2::new(width as i64, height as i64);
+    let mut buckets = [0; BUCKET_COUNT * BUCKET_COUNT];
+    for robot in robots {
+        let bucket_position = (robot.position * BUCKET_COUNT as i64).component_div(&size);
+        let bucket_index = (bucket_position.y as usize * BUCKET_COUNT) + bucket_position.x as usize;
 
-    // Somehow reusing the visited set allocation is noticeably faster on my machine,
-    // but not reusing the map and stack.
-
-    let mut map = HashSet::new();
-    // let map = &mut ctx.map;
-    // map.clear();
-    map.extend(robots.iter().map(|robot| robot.position));
-
-    let mut stack = Vec::new();
-    // let stack = &mut ctx.stack;
-    // stack.clear();
-
-    // let mut visited = HashSet::new();
-    let visited = &mut ctx.visited;
-    visited.clear();
-
-    for &position in map.iter() {
-        stack.push((position, 1));
-
-        while let Some((node, cluster_size)) = stack.pop() {
-            if cluster_size >= CLUSTER_SIZE_THRESHOLD {
-                // Use this while adjusting the threshold for your input
-                // print_map(&map);
-                return true;
-            }
-
-            if !visited.insert(node) {
-                continue;
-            }
-
-            let neighbors = CardinalNeighbors::new(node)
-                .filter(|neighbor| map.contains(neighbor))
-                .map(|neighbor| (neighbor, cluster_size + 1));
-            stack.extend(neighbors)
-        }
+        buckets[bucket_index] += 1;
+        density = std::cmp::max(density, buckets[bucket_index]);
     }
 
-    false
+    density
 }
 
 #[allow(dead_code)]
-fn print_map(map: &HashSet<Vec2>) {
-    let mut grid = Grid::<bool>::new(101, 103);
-    for i in 0..grid.len() {
-        let coordinates = grid.get_coordinates(i).unwrap();
-        let coordinates = Vec2::new(coordinates.x as i64, coordinates.y as i64);
-        grid[i] = map.contains(&coordinates);
+fn print_map(robots: &[Robot], width: u64, height: u64) {
+    let mut grid = Grid::<bool>::new(width as u32, height as u32);
+
+    for robot in robots {
+        let coordinates = Coordinates::new(robot.position.x as u32, robot.position.y as u32);
+        grid[coordinates] = true;
     }
 
     let bitmap = BrailleBitmap(grid);
-    println!("{bitmap}\n------------------------------------");
+    println!("{bitmap}");
 }
 
 fn parse(input: &str) -> anyhow::Result<Vec<Robot>> {
