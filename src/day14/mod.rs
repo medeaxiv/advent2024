@@ -7,6 +7,7 @@ use aoc_utils::{
         combinator::map,
         sequence::{preceded, separated_pair},
     },
+    numerics::Congruence,
     AocError,
 };
 
@@ -61,39 +62,56 @@ fn security_factor(robots: &[Robot], width: u64, height: u64) -> i64 {
 }
 
 fn part_2(input: &str, width: u64, height: u64) -> anyhow::Result<i64> {
-    const LIMIT: i64 = 10000;
-
     let mut robots = parse(input)?;
 
-    let mut max_density = (0, 0);
-    for second in 1..=LIMIT {
+    let mut min_x_variance = (i64::MAX, 0);
+    let mut min_y_variance = (i64::MAX, 0);
+    let limit = std::cmp::max(width, height) as i64;
+    for second in 1..=limit {
         step(&mut robots, width, height);
-        let density = density_peak(&robots, width, height);
 
-        if density > max_density.0 {
-            tracing::trace!(second, density, "New peak density found");
-            max_density = (density, second);
+        let variance = position_variance(&robots);
+        if variance.x < min_x_variance.0 {
+            min_x_variance = (variance.x, second);
+        }
+
+        if variance.y < min_y_variance.0 {
+            min_y_variance = (variance.y, second);
         }
     }
 
-    Ok(max_density.1)
+    let congruences = [
+        Congruence {
+            remainder: min_x_variance.1,
+            modulus: width as i64,
+        },
+        Congruence {
+            remainder: min_y_variance.1,
+            modulus: height as i64,
+        },
+    ];
+
+    // I blatantly stole this from the advent of code subreddit. Look at the previous `Day 14`
+    // commits to see my actual solution.
+    if let Some(result) = aoc_utils::numerics::crt(congruences) {
+        Ok(result.remainder)
+    } else {
+        Err(AocError::message("Unable to find a tree").into())
+    }
 }
 
-fn density_peak(robots: &[Robot], width: u64, height: u64) -> i64 {
-    const BUCKET_COUNT: usize = 10;
+fn position_variance(robots: &[Robot]) -> Vec2 {
+    let mean = {
+        let sum = robots.iter().map(|robot| robot.position).sum::<Vec2>();
+        sum / robots.len() as i64
+    };
 
-    let mut density = 0;
-    let size = Vec2::new(width as i64, height as i64);
-    let mut buckets = [0; BUCKET_COUNT * BUCKET_COUNT];
-    for robot in robots {
-        let bucket_position = (robot.position * BUCKET_COUNT as i64).component_div(&size);
-        let bucket_index = (bucket_position.y as usize * BUCKET_COUNT) + bucket_position.x as usize;
-
-        buckets[bucket_index] += 1;
-        density = std::cmp::max(density, buckets[bucket_index]);
-    }
-
-    density
+    let sum = robots
+        .iter()
+        .map(|robot| robot.position - mean)
+        .map(|delta| delta.component_mul(&delta))
+        .sum::<Vec2>();
+    sum / robots.len() as i64
 }
 
 #[allow(dead_code)]
