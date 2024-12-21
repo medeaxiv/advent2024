@@ -117,6 +117,7 @@ struct Map {
     grid: Grid<Tile>,
     path: Vec<Coordinates>,
     start: Coordinates,
+    #[allow(unused)]
     end: Coordinates,
 }
 
