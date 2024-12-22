@@ -30,6 +30,7 @@ where
         .add_problem(18, advent_2024::day18::problem)
         .add_problem(19, advent_2024::day19::problem)
         .add_problem(20, advent_2024::day20::problem)
+        .add_problem(22, advent_2024::day22::problem)
         .build()
 }
 
